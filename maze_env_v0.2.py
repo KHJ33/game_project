@@ -36,6 +36,7 @@ class Env(tk.Tk) :
         self.title('Maze_MC')
         # tkinter (화면) 사이즈 설정
         self.geometry('{}x{}'.format(WIDTH * UNIT, HEIGHT * UNIT))
+        # self.configure(bg='black') # 테스트 용도
         # 모든 이미지를 load_images() 함수를 통해서 shapes 에 저장
         self.shapes = self.load_images()
         # 화면 그릴 창 canvas 생성 (_build_canvas() 함수 사용)
@@ -46,7 +47,9 @@ class Env(tk.Tk) :
     #####################
     # 이미지 불러오는 함수
     def load_images(self) :
+        # 사이즈 조정을 위한 변수 선언
         resize = 10
+
         rectangle = PhotoImage(
             Image.open("./img/rectangle.png").resize((UNIT - resize, UNIT - resize)))
         triangle = PhotoImage(
@@ -96,17 +99,20 @@ class Env(tk.Tk) :
                 # 시작 지점 이미지 삽입
                 elif map[h][w] == 2 :
                     self.triangle = canvas.create_image((UNIT / 2) + (UNIT * w), (UNIT / 2) + (UNIT * h), image = self.shapes[1])
+                    # 초기 시작 위치 w,h 기억하는 변수 선언
+                    self.W_start_point , self.H_start_point= (UNIT / 2) + (UNIT * w) , (UNIT / 2) + (UNIT * h)
 
                 # 종료 지점 이미지 삽입
                 elif map[h][w] == 3 :
                     self.circle = canvas.create_image((UNIT / 2) + (UNIT * w), (UNIT / 2) + (UNIT * h), image = self.shapes[2])
-
+        
+        # canvas.pack(anchor=tk.CENTER, expand=True)
         canvas.pack()
         return canvas
     #####################
 
     #####################
-    # 강화학습 결과 불러오는 함수
+    # 강화학습 결과를 불러오는 함수 - main 으로 부터 value_table 을 넘겨 받는다.
     def print_value_all(self, value_table) :
         # 기존 canvas 에 작성되어 있는 결과값 지우기
         # 출력 결과창을 위해 사용한 변수 texts 를 이용
@@ -119,7 +125,7 @@ class Env(tk.Tk) :
         for h in range(HEIGHT) :
             for w in range(WIDTH) :
                 # 결과값이 dict 로 들어온다. 그걸 위해서 state 저장
-                state = [h, w] # key 값이 [2,2] 형태로 되어 있다.
+                state = [h, w] # key 값이 ex) [2,3] 형태로 되어 있다.
 
                 #####################
                 # 몬테카를로 결과는 상태 가치 한개만 반환된다.
@@ -127,12 +133,68 @@ class Env(tk.Tk) :
                     # 임시 변수 temp 에 저장 한다. 올림 하기 위해서 사용한다.
                     temp = value_table[str(state)]
 
-                    # state 통해서 해당 지역을 
+                    # state 통해서 해당 지역(ex) [2,3]) 의 가중치를 찍기 위해서 w, h 를 넘겨준다.
                     self.text_value(w, h, round(temp, 3))
                 #####################
 
 
     #####################
+
+    #####################
+    # print_value_all() 함수로 부터 넘겨받은 행과 열로 가중치 출력 함수
+    def text_value(self, w, h, value, font = 'Helvetica', size = 10, style = 'normal', anchor = 'nw'):
+        # 처음 출력되는 위치 표시, 왼쪽 하단으로 설정
+        origin_w, origin_h = UNIT - 30 , UNIT - 20
+
+        # 출력 되는 위치 표시
+        w , h = origin_w + (UNIT * w) , origin_h + (UNIT * h)
+
+        # 폰트 설정
+        font = (font, str(size), style)
+
+        # 출력 후 text 변수에 저장
+        text = self.canvas.create_text(w, h, fill = 'black', text = value, font = font, anchor = anchor)
+        
+        # 출력된 값 texts 변수에 저장
+        self.texts.append(text)
+    #####################
+
+    #####################
+    # triangle 의 위치를 처음 위치로 되될리기
+    def reset(self) :
+        self.update()
+        # 업데이트 후 시간 텀
+        time.sleep(0.5)
+
+        # 현재 triangle 을 w, h 위치 반환
+        w, h = self.canvas.coords(self.triangle)
+
+        # 이동된 triangle 을 초기 위치로 이동, triangle 을 (W_start_poing - w, H_start_point - h) 만큼 이동시킨다.
+        self.canvas.move(self.triangle, self.W_start_point - w, self.H_start_point - h)
+
+        # render 함수를 통해서 업데이트 진행
+        self.render()
+        time.sleep(1)
+
+        # coords_to_state() 함수를 통해서 (width, hight) -> (w, h) 로 변환해준다.
+        return self.coords_to_state([self.W_start_point, self.H_start_point])
+    #####################
+
+    #####################
+    #  (width, hight) -> (w, h) 로 변환해주는 함수 선언
+    def coords_to_stats(self, coords) :
+        w, h = int((coords[0] - (UNIT / 2)) / UNIT), int((coords[1] - (UNIT / 2)) / UNIT)
+        return [w, h]
+    #####################
+
+    #####################
+    # triangle 한 스탭 마다 위치 변경 함수
+    def step(self, action) :
+        # (width, hight) 를 저장하는 state 변수 선언
+        state = self.canvas.coords(self.triangle)
+        # 이동 할 거리를 표시할 base_action 변수 선언
+    #####################
+
 
         
 
@@ -141,5 +203,13 @@ class Env(tk.Tk) :
 if __name__ == '__main__' :
     env = Env()
     # window=tk.Tk()
+
+    # env.text_value(2,5,10)
+
+    # env.reset()
+
+    w , h = env.coords_to_stats([env.W_start_point, env.H_start_point])
+
+    print(w, h)
 
     env.mainloop()
