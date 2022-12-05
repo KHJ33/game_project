@@ -17,10 +17,10 @@ UNIT = 90
 # 창 너비 , 높이 , 위치 설정 (한칸은 UNIT * UNIT 으로 설정)
 WIDTH , HEIGHT = len(map[0]) , len(map)
 
-# 테스트 용도
-WIDTH, HEIGHT = 5,2
-print(WIDTH, HEIGHT)
-map = [[1,1,1,1,1],[1,2,0,0,3]]
+# # 테스트 용도
+# WIDTH, HEIGHT = 5,2
+# print(WIDTH, HEIGHT)
+# map = [[1,1,1,1,1],[1,2,0,0,3]]
 
 ################################
 # 환경 구축
@@ -128,7 +128,8 @@ class Env(tk.Tk) :
         for h in range(HEIGHT) :
             for w in range(WIDTH) :
                 # 결과값이 dict 로 들어온다. 그걸 위해서 state 저장
-                state = [h, w] # key 값이 ex) [2,3] 형태로 되어 있다.
+                # state = [h, w] # key 값이 ex) [2,3] 형태로 되어 있다.
+                state = [w, h]
 
                 #####################
                 # 몬테카를로 결과는 상태 가치 한개만 반환된다.
