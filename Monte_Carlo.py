@@ -2,6 +2,7 @@ import numpy as np
 import random
 from collections import defaultdict
 from maze_env import Env
+import time
 
 # 환경 Env 로 부터 정보를 가지고 온다.
 env = Env()
@@ -57,7 +58,7 @@ class MCAgent :
             next_state = self.possible_next_state(state)
             action = self.arg_max(next_state)
 
-        return int(action)
+        return int(action) 
 
     @staticmethod
     def arg_max(next_state) :
@@ -78,22 +79,34 @@ class MCAgent :
         next_state = [0.0] * 4
 
         if h != 0 :
-            next_state[0] = self.value_table[str([w, h - 1])]
+            if str([w, h - 1]) in self.value_table :
+                next_state[0] = self.value_table[str([w, h - 1])]
+            else :
+                next_state[0] = 0.0
         else :
             next_state[0] = self.value_table[str(state)]
 
         if h != self.height - 1 :
-            next_state[1] = self.value_table[str([w, h + 1])]
+            if str([w, h + 1]) in self.value_table :
+                next_state[1] = self.value_table[str([w, h + 1])]
+            else :
+                next_state[1] = 0.0
         else :
             next_state[1] = self.value_table[str(state)]
 
         if w != 0 :
-            next_state[2] = self.value_table[str([w - 1, h])]
+            if str([w - 1, h]) in self.value_table :
+                next_state[2] = self.value_table[str([w - 1, h])]
+            else :
+                next_state[2] = 0.0
         else :
             next_state[2] = self.value_table[str(state)]
 
         if w != self.width - 1 :
-            next_state[3] = self.value_table[str([w + 1, h])]
+            if str([w + 1, h]) in self.value_table :
+                next_state[3] = self.value_table[str([w + 1, h])]
+            else :
+                next_state[3] = 0.0
         else :
             next_state[3] = self.value_table[str(state)]
 
@@ -104,5 +117,48 @@ class MCAgent :
 
 if __name__ == '__main__' :
     
-    agent = MCAgent()
+    agent = MCAgent(actions=list(range(env.n_actions)))
+    # state = [0,0]
+    # action = agent.get_action(state)
+
+    # # print(action)
+
+    # env.render()
+
+    # # next_state, reward, done = env.step(1)
+
+    # # print(next_state)
+    # print(agent.value_table)
+
+    env.reset()
+    env.render()
+    time.sleep(3)
+
+    for episode in range(100) :
+        state = env.reset()
+        action = agent.get_action(state)
+
+        while True :
+            env.render()
+            next_state , reward, done = env.step(action)
+            # time.sleep(0.5)
+            # print('save_sample 전 : ',agent.value_table)
+            agent.save_sample(next_state, reward, done)
+            # print('save_sample 후 : ',agent.value_table)
+
+            action = agent.get_action(next_state)
+
+            if done :
+                # print(f'episode 번째 : {episode}')
+                agent.update()
+
+                env.print_value_all(agent.value_table)
+
+                env.print_label()
+
+                agent.samples.clear()
+                break
+
+    state = env.reset()
+
     env.mainloop()
