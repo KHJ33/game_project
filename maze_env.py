@@ -2,15 +2,25 @@ import time
 import numpy as np
 import tkinter as tk
 from PIL import ImageTk, Image
-import make_maze
+# import make_maze
 
-# 랜덤 미로 생성
-map = make_maze.Maze()
-# 랜덤 미로 배열 사이즈 변경
-map.set_size(5)
-# 배열로 값을 반환 받고
-# 0 : 이동 가능 지점, 1: 벽 , 2 : 시작 지점, 3 : 종료 지점
-map = map.get_mazeMap()
+# # 랜덤 미로 생성
+# map = make_maze.Maze()
+# # 랜덤 미로 배열 사이즈 변경
+# map.set_size(3)
+# # 배열로 값을 반환 받고
+# # 0 : 이동 가능 지점, 1: 벽 , 2 : 시작 지점, 3 : 종료 지점
+# map = map.get_mazeMap()
+
+# map = [[2,0,1,1,0,0],[0,0,1,1,1,0],[0,0,0,0,0,0],[1,1,0,0,0,0],[0,0,0,1,1,0],[1,0,0,1,1,3]]
+
+map = [[2,0,0,0,0,0,1,1,0,0],
+       [0,0,0,1,1,0,1,0,0,0],
+       [1,1,0,1,1,0,1,0,1,1],
+       [0,0,0,0,1,0,0,0,1,1],
+       [0,1,1,0,0,0,1,0,0,0],
+       [0,0,0,0,0,0,1,0,1,1],
+       [0,0,1,1,1,0,0,0,0,3]]
 
 PhotoImage = ImageTk.PhotoImage
 UNIT = 90
@@ -36,7 +46,9 @@ class Env(tk.Tk) :
         # title 이름 설정
         self.title('Maze_MC')
         # tkinter (화면) 사이즈 설정
-        self.geometry('{}x{}'.format(WIDTH * UNIT, HEIGHT * UNIT))
+        self.geometry('{}x{}'.format(WIDTH * UNIT, HEIGHT * UNIT + 40))
+        # 에피소드를 기록할 변수 선언
+        self.episode = 1
         # self.configure(bg='black') # 테스트 용도
         # 모든 이미지를 load_images() 함수를 통해서 shapes 에 저장
         self.shapes = self.load_images()
@@ -52,11 +64,11 @@ class Env(tk.Tk) :
         resize = 10
 
         rectangle = PhotoImage(
-            Image.open("./img/rectangle.png").resize((UNIT - resize, UNIT - resize)))
+            Image.open("./img/block.png").resize((UNIT - resize, UNIT - resize)))
         triangle = PhotoImage(
-            Image.open("./img/triangle.png").resize((UNIT - resize, UNIT - resize)))
+            Image.open("./img/ghost2.png").resize((UNIT - resize, UNIT - resize)))
         circle = PhotoImage(
-            Image.open("./img/circle.png").resize((UNIT - resize, UNIT - resize)))
+            Image.open("./img/coin.png").resize((UNIT - resize, UNIT - resize)))
 
         return rectangle , triangle , circle
     #####################
@@ -109,6 +121,12 @@ class Env(tk.Tk) :
                 elif map[h][w] == 3 :
                     self.circle = canvas.create_image((UNIT / 2) + (UNIT * w), (UNIT / 2) + (UNIT * h), image = self.shapes[2])
         
+
+        # 에피소드를 출력할 라벨 생성
+        self.label = tk.Label(self, text='epsode : ' + str(self.episode), font=('Arial', 16), highlightthickness=3, highlightbackground='blue')
+        # self.label.place(x=0, y=0)
+        self.label.pack()
+
         # canvas.pack(anchor=tk.CENTER, expand=True)
         canvas.pack()
         return canvas
@@ -144,9 +162,9 @@ class Env(tk.Tk) :
 
     #####################
     # print_value_all() 함수로 부터 넘겨받은 행과 열로 가중치 출력 함수
-    def text_value(self, w, h, value, font = 'Helvetica', size = 10, style = 'normal', anchor = 'nw'):
+    def text_value(self, w, h, value, font = 'Helvetica', size = 14, style = 'normal', anchor = 'nw'):
         # 처음 출력되는 위치 표시, 왼쪽 하단으로 설정
-        origin_w, origin_h = UNIT - 30 , UNIT - 20
+        origin_w, origin_h = UNIT - 38 , UNIT - 20
 
         # 출력 되는 위치 표시
         w , h = origin_w + (UNIT * w) , origin_h + (UNIT * h)
@@ -159,6 +177,13 @@ class Env(tk.Tk) :
         
         # 출력된 값 texts 변수에 저장
         self.texts.append(text)
+    #####################
+
+    #####################
+    # 에피소드를 출력하는 함수
+    def print_label(self) :
+        self.episode += 1
+        self.label.config(text='epsode : ' + str(self.episode))
     #####################
 
     #####################
@@ -240,12 +265,12 @@ class Env(tk.Tk) :
         # 벽에 도착 할 경우 보상을 - 100 부여
         # elif next_state in self.canvas.coords(self.rectangle) :
         elif next_state in [self.canvas.coords(x) for x in self.rectangle] :
-            print('보상 -100 부여')
+            # print('보상 -100 부여')
             reward = -100
             done = True
         # 일반 길일 경우에 보상 0
         else :
-            reward = 0
+            reward = -1
             done = False
         #####################
 
@@ -267,6 +292,13 @@ if __name__ == '__main__' :
     # env.text_value(2,5,10)
 
     # env.reset()
+
+    env.step(3)
+
+    # env.triangle
+    print(env.canvas.coords(env.triangle))
+
+    print(env.coords_to_state(env.canvas.coords(env.triangle)))
 
     # w , h = env.coords_to_stats([env.W_start_point, env.H_start_point])
     # print(w, h)
